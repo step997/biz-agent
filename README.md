@@ -107,7 +107,7 @@ AI：检测到试图改写系统设定的内容，本次请求已拦截并记录
 | 决策 | 为什么 |
 |---|---|
 | **Agent 不直连数据库，只走工具层** | 权限、审计、可测三件事一次解决：工具是唯一入口，就能在入口处做参数校验、只读写分类、记录调用；换成真实 ERP 时只改 `tools/biz_tools.py` 的 HTTP 部分 |
-| **工具层不依赖 LLM** | 47 个测试里绝大多数是纯业务断言，改 prompt 不会让测试失真；LLM 挂了功能还在（offline 规则规划器兜底） |
+| **工具层不依赖 LLM** | 49 个测试里绝大多数是纯业务断言，改 prompt 不会让测试失真；LLM 挂了功能还在（offline 规则规划器兜底） |
 | **写操作一律审批（HITL）** | 退款/补发/调价只生成审批单，`create_approval.requires_approval=True`，前端"人工审批"面板点通过才落库；对钱的操作不能交给模型 |
 | **RAG 只答制度类，查数走 SQL 工具** | 制度是静态文档、订单是动态数据，混在一个检索里必然编造。制度类问题带 citations，检索不到就明说"没有可信依据，转人工" |
 
@@ -172,11 +172,12 @@ biz-agent/
 │  └─ main.py           # /chat /dashboard /audit/* /approvals /tools + 静态前端
 ├─ rag/
 │  ├─ corpus.py         # 制度 chunk 加载（缓存 → DB 三级降级）
-│  └─ index.py          # BM25 + TF-IDF 余弦 + RRF 融合 + 两档阈值 + 领域门
+│  ├─ embedder.py       # bge-small-zh 编码 + 向量缓存（fp 指纹校验）
+│  └─ index.py          # BM25 + TF-IDF 余弦 + FAISS + RRF + 分档阈值 + 三道门
 ├─ web/index.html       # 六面板前端（无构建步骤，纯 HTML/JS）
 ├─ docs/policies/       # 8 篇公司制度（退换货/发票/发货/SLA/会员/批发/破损/催收）
 ├─ scripts/             # seed/评测/冒烟/MCP 自检
-├─ tests/               # 47 个 pytest
+├─ tests/               # 49 个 pytest
 ├─ mcp_server.py        # 9 个工具暴露为 MCP Server
 ├─ Dockerfile · docker-compose.yml
 └─ requirements.txt · .env.example
@@ -246,7 +247,7 @@ biz-agent/
 ## 9. 测试
 
 ```bash
-pytest tests -q        # 47 passed
+pytest tests -q        # 49 passed
 ```
 
 - `test_biz_api.py`：认证、筛选、分页、404、工单状态机、审批流、金额勾稽
