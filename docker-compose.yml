@@ -1,0 +1,51 @@
+name: biz-agent
+
+services:
+  biz:
+    build: .
+    command: uvicorn biz_system.main:app --host 0.0.0.0 --port 8001
+    environment:
+      BIZ_API_KEY: ${BIZ_API_KEY:-demo-key}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8001/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  agent:
+    build: .
+    command: uvicorn agent.main:app --host 0.0.0.0 --port 8000
+    environment:
+      BIZ_BASE_URL: http://biz:8001
+      BIZ_API_KEY: ${BIZ_API_KEY:-demo-key}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
+      AGENT_MODE: ${AGENT_MODE:-}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data:/app/data
+      - ./web:/app/web
+    ports:
+      - "8000:8000"
+    depends_on:
+      biz:
+        condition: service_healthy
+
+  patrol:
+    build: .
+    command: python -m agent.jobs
+    environment:
+      BIZ_BASE_URL: http://biz:8001
+      BIZ_API_KEY: ${BIZ_API_KEY:-demo-key}
+      WECOM_WEBHOOK: ${WECOM_WEBHOOK:-}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      biz:
+        condition: service_healthy

@@ -1,0 +1,25 @@
+# 运行时
+fastapi==0.163.1
+uvicorn[standard]==0.54.0
+httpx==0.28.1
+python-dotenv==1.2.4
+APScheduler==3.11.3
+
+# 智能体编排
+langgraph==1.2.22
+langgraph-checkpoint-sqlite==3.1.3
+langchain-core==1.8.1
+langchain-openai==1.8.0
+
+# 检索：词法通道（BM25 + TF-IDF，自研，只依赖 numpy，任何环境都能跑）
+numpy==2.5.5
+
+# 检索：语义通道（约 250MB）见 requirements-embed.txt
+# 装了 → RAG_BACKEND=auto 自动走 hybrid（bge-small-zh-v1.5 + FAISS 内积）
+# 不装 → 自动降级为 tfidf，接口与行为一致
+
+# MCP 工具服务（可选）
+mcp==2.3.0
+
+# 测试
+pytest==9.2.0

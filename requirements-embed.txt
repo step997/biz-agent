@@ -1,0 +1,4 @@
+# 语义检索可选依赖（约 250MB；不装则自动降级为纯词法 BM25+TF-IDF）
+# 用法：pip install -r requirements-embed.txt && python scripts/build_embeddings.py
+sentence-transformers==6.3.0
+faiss-cpu==1.16.0

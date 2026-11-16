@@ -1,0 +1,21 @@
+# ── 环境与缓存 ─────────────────────────────────────────
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.dsh-office-*/
+
+# ── 密钥（绝不提交）─────────────────────────────────────
+.env
+
+# ── 运行时数据（可 seed 重建）───────────────────────────
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+data/policies_cache.json
+
+# ── 向量缓存（可用 scripts/build_embeddings.py 重建）────
+data/emb.npy
+data/emb_meta.json
+data/*.npy

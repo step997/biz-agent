@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BizAgent · 企业业务智能体</title>
+<style>
+  :root{
+    --paper:#fbfaf6; --card:#ffffff; --ink:#15181d; --ink-2:#4a5058; --ink-3:#8b9199;
+    --line:#e4e1d8; --line-2:#d3cfc3;
+    --teal:#0f6f66; --teal-soft:#e6f2f0; --amber:#a86412; --amber-soft:#fbf0dc;
+    --red:#a6362c; --red-soft:#fbeae8; --blue:#2c5c8f; --blue-soft:#e9eff6;
+    --mono:ui-monospace,"SFMono-Regular","JetBrains Mono",Consolas,monospace;
+    --sans:"Inter","HarmonyOS Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    --serif:"Songti SC","Noto Serif SC",Georgia,serif;
+    --r:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.6 var(--sans);
+    background-image:radial-gradient(circle at 1px 1px, rgba(21,24,29,.045) 1px, transparent 0);
+    background-size:22px 22px;}
+  button{font:inherit;cursor:pointer}
+  a{color:var(--teal)}
+
+  .shell{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+  /* ---------- rail ---------- */
+  .rail{border-right:1px solid var(--line);background:rgba(255,255,255,.72);
+    backdrop-filter:blur(6px);padding:22px 16px;display:flex;flex-direction:column;gap:22px;
+    position:sticky;top:0;height:100vh}
+  .brand{display:flex;flex-direction:column;gap:2px}
+  .brand b{font:600 20px/1.2 var(--serif);letter-spacing:.5px}
+  .brand span{font-size:11px;color:var(--ink-3);letter-spacing:.18em;text-transform:uppercase}
+  .mode{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:10px;
+    font:500 11px/1 var(--mono);padding:6px 9px;border-radius:999px;background:var(--teal-soft);
+    color:var(--teal);border:1px solid rgba(15,111,102,.18)}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  nav{display:flex;flex-direction:column;gap:2px}
+  nav button{display:flex;align-items:center;gap:10px;background:none;border:0;text-align:left;
+    padding:9px 10px;border-radius:8px;color:var(--ink-2);font-size:13.5px}
+  nav button:hover{background:rgba(21,24,29,.045);color:var(--ink)}
+  nav button.on{background:var(--ink);color:#fff}
+  nav button .k{font:11px var(--mono);opacity:.55}
+  .rail-foot{margin-top:auto;font-size:11.5px;color:var(--ink-3);display:flex;flex-direction:column;gap:6px}
+  .rail-foot a{color:var(--ink-2);text-decoration:none;border-bottom:1px dotted var(--line-2)}
+
+  /* ---------- main ---------- */
+  main{padding:26px 30px 40px;max-width:1500px}
+  .head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+  .head h1{margin:0;font:600 22px/1.2 var(--serif);letter-spacing:.3px}
+  .head p{margin:4px 0 0;color:var(--ink-3);font-size:12.5px}
+  .view{display:none}
+  .view.on{display:block}
+
+  /* ---------- chat ---------- */
+  .chat-grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:18px;align-items:start}
+  @media (max-width:1150px){.chat-grid{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:0 1px 0 rgba(21,24,29,.03)}
+  .panel-h{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:11px 14px;border-bottom:1px solid var(--line)}
+  .panel-h b{font:600 13px/1 var(--sans);letter-spacing:.02em}
+  .panel-h .sub{font:11px var(--mono);color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  #auditTable{min-width:980px}  #auditTable td:last-child{max-width:300px;word-break:break-all;color:var(--ink-3);font-size:11.5px}
+  #log{height:calc(100vh - 400px);min-height:300px;overflow-y:auto;padding:16px;display:flex;
+    flex-direction:column;gap:14px}
+  .msg{display:flex;gap:10px;max-width:100%}
+  .msg .who{flex:0 0 26px;height:26px;border-radius:7px;display:grid;place-items:center;
+    font:600 11px var(--mono);border:1px solid var(--line-2);color:var(--ink-2);background:#faf9f5}
+  .msg.user .who{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .bubble{flex:1;min-width:0}
+  .bubble .txt{white-space:pre-wrap;word-break:break-word}
+  .msg.user .txt{background:#f4f2ea;border:1px solid var(--line);padding:9px 12px;border-radius:8px}
+  .msg.bot .txt{padding:2px 0}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;align-items:center}
+  .chip{font:10.5px var(--mono);padding:3px 7px;border-radius:6px;border:1px solid var(--line-2);
+    color:var(--ink-2);background:#faf9f5}
+  .chip.ok{background:var(--teal-soft);border-color:rgba(15,111,102,.2);color:var(--teal)}
+  .chip.warn{background:var(--amber-soft);border-color:rgba(168,100,18,.22);color:var(--amber)}
+  .chip.bad{background:var(--red-soft);border-color:rgba(166,54,44,.22);color:var(--red)}
+  .chip.info{background:var(--blue-soft);border-color:rgba(44,92,143,.2);color:var(--blue)}
+  .cite{display:block;font:11.5px var(--mono);color:var(--ink-3);padding:2px 0}
+
+  .composer{border-top:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  .composer textarea{width:100%;min-height:56px;max-height:150px;resize:vertical;padding:10px 12px;
+    border:1px solid var(--line-2);border-radius:8px;background:#fdfcf9;font:13.5px/1.55 var(--sans);
+    color:var(--ink);outline:none}
+  .composer textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,111,102,.08)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn{border:1px solid var(--ink);background:var(--ink);color:#fff;padding:7px 14px;border-radius:7px;
+    font-size:13px}
+  .btn.ghost{background:none;color:var(--ink-2);border-color:var(--line-2)}
+  .btn.ghost:hover{color:var(--ink);border-color:var(--ink-3)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .sugs{display:flex;gap:6px;flex-wrap:wrap}
+  .sugs button{font-size:12px;padding:4px 9px;border-radius:999px;border:1px dashed var(--line-2);
+    background:none;color:var(--ink-2)}
+  .sugs button:hover{border-color:var(--teal);color:var(--teal)}
+
+  /* ---------- trace ---------- */
+  #trace{max-height:calc(100vh - 250px);overflow-y:auto;padding:12px 14px}
+  .stepline{display:grid;grid-template-columns:20px 1fr;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .stepline:last-child{border-bottom:0}
+  .stepline .n{font:10.5px var(--mono);color:var(--ink-3);text-align:right}
+  .stepline .t{font:600 12.5px var(--mono)}
+  .stepline .d{font:11.5px var(--mono);color:var(--ink-3);word-break:break-all}
+  .empty{color:var(--ink-3);font-size:12.5px;text-align:center;padding:26px 10px}
+
+  /* ---------- cards / tables ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px;margin-bottom:16px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px}
+  .kpi .l{font-size:11.5px;color:var(--ink-3);letter-spacing:.02em}
+  .kpi .v{font:600 26px/1.15 var(--serif);margin-top:6px}
+  .kpi .h{font:11px var(--mono);color:var(--ink-3);margin-top:4px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:1000px){.cols{grid-template-columns:1fr}}
+  .pad{padding:14px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;font:600 11px var(--sans);letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-3);padding:8px 10px;border-bottom:1px solid var(--line)}
+  td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td.mono,.mono{font-family:var(--mono);font-size:11.8px}
+  .bars{display:flex;flex-direction:column;gap:8px}
+  .bar{display:grid;grid-template-columns:88px 1fr 42px;gap:10px;align-items:center;font-size:12.5px}
+  .bar .track{display:block;height:8px;background:#efede5;border-radius:99px;overflow:hidden}
+  .bar .fill{display:block;height:100%;background:var(--teal);border-radius:99px}
+  .bar .n{font:11.5px var(--mono);color:var(--ink-2);text-align:right}
+  .approval{border:1px solid var(--line);border-radius:9px;padding:12px;margin-bottom:10px;background:#fdfcf9}
+  .approval .top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px}
+  .approval pre{margin:6px 0 10px;background:#fff;border:1px solid var(--line);border-radius:7px;
+    padding:8px 10px;font:11.5px var(--mono);overflow-x:auto}
+  .toast{position:fixed;right:20px;bottom:20px;background:var(--ink);color:#fff;padding:10px 14px;
+    border-radius:8px;font-size:12.5px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none}
+  .toast.on{opacity:1;transform:none}
+  .sel{max-width:190px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:#fff;
+    font:12px var(--sans);color:var(--ink);cursor:pointer}
+  .sel:focus{outline:none;border-color:var(--teal)}
+  .msg .bubble .txt{white-space:pre-wrap;word-break:break-word}
+  .caret{display:inline-block;width:7px;height:14px;background:var(--teal);vertical-align:-2px;margin-left:1px;
+    animation:blink 1s steps(2,end) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ---------- 移动端（≤820px）---------- */
+  @media (max-width:820px){
+    .shell{grid-template-columns:1fr}
+    .rail{position:static;height:auto;flex-direction:row;align-items:center;gap:10px;
+      overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);padding:10px 12px}
+    .brand{flex-direction:row;align-items:baseline;gap:8px;white-space:nowrap}
+    .rail-foot{display:none}
+    nav{flex-direction:row;gap:6px;margin:0}
+    nav button{white-space:nowrap;padding:7px 10px}
+    main{padding:16px 14px 28px}
+    .chat-grid{grid-template-columns:1fr}
+    #log{height:calc(100vh - 430px);min-height:240px}
+    .cols{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <b>BizAgent</b>
+      <span>Enterprise Agent Demo</span>
+      <div class="mode" id="mode"><i class="dot"></i><span>offline</span></div>
+    </div>
+    <nav>
+      <button class="on" data-view="chat"><span class="k">01</span>对话</button>
+      <button data-view="board"><span class="k">02</span>业务看板</button>
+      <button data-view="audit"><span class="k">03</span>调用审计</button>
+      <button data-view="approve"><span class="k">04</span>人工审批</button>
+      <button data-view="tools"><span class="k">05</span>工具清单</button>
+    </nav>
+    <div class="rail-foot">
+      <a href="/docs" target="_blank">OpenAPI /docs</a>
+      <span id="health">检查服务…</span>
+      <span>Mock ERP · SQLite</span>
+    </div>
+  </aside>
+
+  <main>
+    <!-- 对话 -->
+    <section class="view on" id="v-chat">
+      <div class="head">
+        <div><h1>业务对话</h1><p>自然语言查数 / 建单 / 审批，全程只经工具层访问业务系统</p></div>
+        <div class="row">
+          <select class="sel" id="threadSel" title="历史会话"><option value="">新会话</option></select>
+          <span class="chip mono" id="threadLabel">thread —</span>
+          <button class="btn ghost" id="newThread">新会话</button>
+        </div>
+      </div>
+      <div class="chat-grid">
+        <div class="panel">
+          <div class="panel-h"><b>对话</b><span class="sub" id="modeSub">—</span></div>
+          <div id="log"><div class="empty">问点什么试试，比如「查一下王伟最近一周的订单」</div></div>
+          <div class="composer">
+            <textarea id="q" placeholder="用自然语言提问，Enter 发送 / Shift+Enter 换行"></textarea>
+            <div class="sugs" id="sugs"></div>
+            <div class="row" style="justify-content:flex-end">
+              <span class="chip" id="timing"></span>
+              <button class="btn" id="send">发送</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><b>执行轨迹</b><span class="sub">plan → tools → compose</span></div>
+          <div id="trace"><div class="empty">尚未执行</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 看板 -->
+    <section class="view" id="v-board">
+      <div class="head"><div><h1>业务看板</h1><p>订单 / 库存 / 工单 / 审批 + 智能体自身运行指标</p></div>
+        <button class="btn ghost" id="refreshBoard">刷新</button></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="cols">
+        <div class="panel"><div class="panel-h"><b>订单状态分布</b><span class="sub" id="orderTotal"></span></div>
+          <div class="pad bars" id="orderBars"></div></div>
+        <div class="panel"><div class="panel-h"><b>工具调用分布</b><span class="sub" id="toolTotal"></span></div>
+          <div class="pad"><table id="toolTable"><tbody></tbody></table></div></div>
+      </div>
+    </section>
+
+    <!-- 审计 -->
+    <section class="view" id="v-audit">
+      <div class="head"><div><h1>调用审计</h1><p>每一次工具调用与对话都落库，可追溯</p></div>
+        <button class="btn ghost" id="refreshAudit">刷新</button></div>
+      <div class="panel"><div class="panel-h"><b>最近工具调用</b><span class="sub" id="auditSub"></span></div>
+        <div class="pad" style="overflow-x:auto"><table id="auditTable">
+          <thead><tr><th>时间</th><th>会话</th><th>工具</th><th>类型</th><th>结果</th><th>耗时</th><th>参数</th></tr></thead>
+          <tbody></tbody></table></div></div>
+      <div class="panel" style="margin-top:14px"><div class="panel-h"><b>最近对话</b><span class="sub">conversations</span></div>
+        <div class="pad" style="overflow-x:auto"><table id="convTable">
+          <thead><tr><th>时间</th><th>问题</th><th>回答</th><th>置信</th></tr></thead><tbody></tbody></table></div></div>
+    </section>
+
+    <!-- 审批 -->
+    <section class="view" id="v-approve">
+      <div class="head"><div><h1>人工审批</h1><p>写操作不自动执行：生成审批单，人来点通过</p></div>
+        <button class="btn ghost" id="refreshAppr">刷新</button></div>
+      <div class="cols">
+        <div class="panel"><div class="panel-h"><b>待审批</b><span class="sub" id="apprSub"></span></div><div class="pad" id="apprPending"></div></div>
+        <div class="panel"><div class="panel-h"><b>已处理</b><span class="sub">历史</span></div><div class="pad" id="apprDone"></div></div>
+      </div>
+    </section>
+
+    <!-- 工具 -->
+    <section class="view" id="v-tools">
+      <div class="head"><div><h1>工具清单</h1><p>9 个工具即智能体的全部能力边界；参数用 Pydantic 约束并导出 function-calling schema</p></div></div>
+      <div class="panel"><div class="panel-h"><b>已注册工具</b><span class="sub" id="toolsSub"></span></div>
+        <div class="pad" style="overflow-x:auto"><table id="toolsTable">
+          <thead><tr><th>工具</th><th>类型</th><th>说明</th><th>参数</th></tr></thead><tbody></tbody></table></div></div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const api = (p, o) => fetch(p, o).then(r => r.ok ? r.json() : r.text().then(t => Promise.reject(t)));
+const esc = s => String(s ?? "").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const store = {
+  get thread(){ return sessionStorage.getItem("thread") || ""; },
+  set thread(v){ sessionStorage.setItem("thread", v); }
+};
+let busy = false;
+
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 2200);
+}
+if (!store.thread) store.thread = "s" + Date.now().toString(36);
+$("#threadLabel").textContent = "thread " + store.thread;
+
+/* ---------- nav ---------- */
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "v-" + b.dataset.view));
+  if (b.dataset.view === "board") loadBoard();
+  if (b.dataset.view === "audit") loadAudit();
+  if (b.dataset.view === "approve") loadApprovals();
+  if (b.dataset.view === "tools") loadTools();
+});
+
+/* ---------- boot ---------- */
+const SUGS = ["查一下王伟最近一周的订单", "SO10204 的物流到哪了", "有哪些商品低于安全库存",
+  "退款几天内可以无理由退", "现在有超时的工单吗", "SO10204 出现破损，帮我建个质量工单",
+  "客户要求退款 128 元，帮我提交退款审批"];
+$("#sugs").innerHTML = SUGS.map(s => `<button>${esc(s)}</button>`).join("");
+$("#sugs").onclick = e => { if (e.target.tagName === "BUTTON"){ $("#q").value = e.target.textContent; send(); } };
+
+api("/health").then(h => {
+  $("#health").textContent = "服务正常 · " + (h.mode || "offline");
+  $("#mode").innerHTML = `<i class="dot"></i><span>${esc(h.mode || "offline")} mode</span>`;
+  $("#modeSub").textContent = "agent " + (h.mode || "offline") + " · biz " + (h.biz || "8001");
+}).catch(() => { $("#health").textContent = "服务未响应"; });
+
+loadThreads();
+
+$("#newThread").onclick = () => {
+  store.thread = "s" + Date.now().toString(36);
+  $("#threadLabel").textContent = "thread " + store.thread;
+  $("#threadSel").value = "";
+  $("#log").innerHTML = '<div class="empty">新会话已开始</div>';
+  $("#trace").innerHTML = '<div class="empty">尚未执行</div>';
+};
+
+$("#threadSel").onchange = async e => {
+  const tid = e.target.value;
+  if (!tid) return;
+  store.thread = tid;
+  $("#threadLabel").textContent = "thread " + tid;
+  const d = await api("/threads/" + encodeURIComponent(tid));
+  const hist = (d.history || []).slice(-10);
+  $("#log").innerHTML = hist.length ? "" : '<div class="empty">该会话暂无记录</div>';
+  hist.forEach(t => {
+    bubble("user", t.question);
+    bubble("bot", t.answer);
+  });
+  $("#trace").innerHTML = '<div class="empty">历史会话 · 发新问题可看执行轨迹</div>';
+  $("#log").scrollTop = $("#log").scrollHeight;
+};
+
+async function loadThreads(){
+  try {
+    const d = await api("/threads?limit=30");
+    const cur = store.thread;
+    const opts = ['<option value="">新会话</option>'].concat((d.items || []).map(t =>
+      `<option value="${esc(t.thread_id)}">${esc((t.title || t.thread_id).slice(0, 18))} · ${t.turns}轮</option>`));
+    const sel = $("#threadSel");
+    sel.innerHTML = opts.join("");
+    sel.value = (d.items || []).some(t => t.thread_id === cur) ? cur : "";
+  } catch(_) {}
+}
+
+/* ---------- chat ---------- */
+$("#send").onclick = send;
+$("#q").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); send(); }
+  if (e.key === "Escape"){ e.currentTarget.value = ""; }
+});
+
+function bubble(role, text){
+  const el = document.createElement("div");
+  el.className = "msg " + role;
+  el.innerHTML = `<div class="who">${role === "user" ? "你" : "AI"}</div><div class="bubble"><div class="txt">${esc(text)}</div></div>`;
+  $("#log").appendChild(el); $("#log").scrollTop = 1e9;
+  return el.querySelector(".bubble");
+}
+
+async function send(){
+  const q = $("#q").value.trim();
+  if (!q || busy) return;
+  busy = true; $("#send").disabled = true; $("#send").textContent = "思考中…"; $("#timing").textContent = "";
+  $("#q").value = "";
+  bubble("user", q);
+  const b = bubble("bot", "");
+  const txt = b.querySelector(".txt");
+  txt.innerHTML = '<span class="caret"></span>';
+  $("#trace").innerHTML = '<div class="empty">规划中…</div>';
+  const t0 = performance.now();
+  const live = {guard: "", plan: [], tools: [], firstByte: null};
+  let answer = "";
+
+  try {
+    await streamChat(q, ev => {
+      if (ev.event === "node" && ev.node === "guard"){
+        live.guard = ev.ok === false ? "拦截" : "通过";
+        renderLive(live);
+      } else if (ev.event === "node" && ev.node === "plan"){
+        live.plan = (ev.tools || []).map(t => `工具：${t.tool || t}`);
+        renderLive(live);
+      } else if (ev.event === "node" && ev.node === "tool"){
+        live.tools.push(ev);
+        renderLive(live);
+      } else if (ev.event === "delta"){
+        if (live.firstByte === null) live.firstByte = performance.now() - t0;
+        answer += ev.text || "";
+        txt.textContent = answer;
+        txt.insertAdjacentHTML("beforeend", '<span class="caret"></span>');
+        $("#log").scrollTop = 1e9;
+      } else if (ev.event === "done"){
+        finalize(ev, b, txt, answer, t0, live);
+      } else if (ev.event === "error"){
+        txt.textContent = ev.message || "执行失败";
+      }
+    });
+  } catch (err){
+    txt.textContent = "请求失败：" + err;
+  } finally {
+    busy = false; $("#send").disabled = false; $("#send").textContent = "发送"; $("#q").focus();
+    loadThreads();
+  }
+}
+
+/* 逐事件消费 SSE：不再等一整轮结束才出字 */
+async function streamChat(q, onEvent){
+  const r = await fetch("/chat/stream", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({message: q, thread_id: store.thread})
+  });
+  if (!r.ok || !r.body) throw new Error("HTTP " + r.status);
+  const reader = r.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  while (true){
+    const {done, value} = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, {stream: true});
+    const parts = buf.split("\n\n");
+    buf = parts.pop();
+    for (const part of parts){
+      const line = part.split("\n").find(l => l.startsWith("data: "));
+      if (!line) continue;
+      try { onEvent(JSON.parse(line.slice(6))); } catch(_) {}
+    }
+  }
+}
+
+function finalize(r, b, txt, streamed, t0, live){
+  if (r.thread_id){
+    store.thread = r.thread_id;
+    $("#threadLabel").textContent = "thread " + r.thread_id;
+  }
+  const ans = r.answer || streamed || "(空)";
+  txt.textContent = ans;
+  const chips = [];
+  const conf = r.confidence || "ok";
+  chips.push(`<span class="chip ${r.blocked ? "bad" : conf === "low" || conf === "medium" ? "warn" : "ok"}">${esc(conf)}</span>`);
+  (r.tool_trace || []).forEach(t => chips.push(
+    `<span class="chip ${t.ok ? "info" : "bad"}">${esc(t.tool)}${t.ok ? "" : " ✕"}</span>`));
+  if ((r.citations || []).length) chips.push(`<span class="chip">citations ${r.citations.length}</span>`);
+  if ((r.pending_approvals || []).length) chips.push(`<span class="chip warn">待审批 ${r.pending_approvals.length}</span>`);
+  chips.push(`<span class="chip">首字 ${Math.round(live.firstByte ?? 0)} ms</span>`);
+  chips.push(`<span class="chip">${Math.round(performance.now() - t0)} ms</span>`);
+  b.insertAdjacentHTML("beforeend", `<div class="meta">${chips.join("")}</div>`);
+  (r.citations || []).forEach(c => b.insertAdjacentHTML("beforeend",
+    `<span class="cite">↳ ${esc(c.chunk_id || c)}　${esc((c.title || "").slice(0, 28))}</span>`));
+  $("#timing").textContent = "首字 " + Math.round(live.firstByte ?? 0) + "ms · 总 " + Math.round(performance.now() - t0) + "ms";
+  renderTrace({guard: live.guard, plan: live.plan,
+    tool_trace: r.tool_trace || [], confidence: r.confidence, mode: r.mode});
+  $("#log").scrollTop = $("#log").scrollHeight;
+}
+
+/* 流式中：plan / tool 一到就先落进轨迹面板，不等 compose */
+function renderLive(live){
+  const steps = [];
+  if (live.guard) steps.push({t: "guard", d: "输入检查 " + live.guard});
+  live.plan.forEach(p => steps.push({t: "plan", d: p}));
+  live.tools.forEach(t => steps.push({
+    t: (t.tool || "tool") + (t.ok === false ? " ✕" : ""),
+    d: `args ${JSON.stringify(t.args || {})}　${t.latency_ms ?? "?"}ms`
+  }));
+  if (!steps.length) return;
+  $("#trace").innerHTML = steps.map((s, i) =>
+    `<div class="stepline"><div class="n">${i + 1}</div><div><div class="t">${esc(s.t)}</div><div class="d">${esc(s.d)}</div></div></div>`
+  ).join("");
+  $("#trace").scrollTop = 0;
+}
+
+function renderTrace(r){
+  const steps = [];
+  if (r.guard) steps.push({t:"guard", d:"输入检查 " + r.guard});
+  (r.plan || []).forEach(p => steps.push({t:"plan", d: typeof p === "string" ? p : JSON.stringify(p)}));
+  (r.trace || r.tool_trace || []).forEach(t => steps.push({
+    t:(t.tool || "tool") + (t.ok === false ? " ✕" : ""),
+    d:`args ${JSON.stringify(t.args || {})}　${t.latency_ms ?? "?"}ms`
+  }));
+  if (r.confidence) steps.push({t:"compose", d:"confidence " + r.confidence + (r.mode ? " · " + r.mode : "")});
+  $("#trace").innerHTML = steps.length ? steps.map((s, i) =>
+    `<div class="stepline"><div class="n">${i + 1}</div><div><div class="t">${esc(s.t)}</div><div class="d">${esc(s.d)}</div></div></div>`
+  ).join("") : '<div class="empty">无执行步骤</div>';
+  $("#trace").scrollTop = 0;
+}
+
+/* ---------- board ---------- */
+async function loadBoard(){
+  try {
+    const d = await api("/dashboard");
+    const biz = d.biz || {};
+    const ag = d.agent || {};
+    $("#kpis").innerHTML = [
+      ["订单总量", biz.orders_total ?? "—", "orders"],
+      ["订单金额", biz.orders_amount != null ? "¥" + Number(biz.orders_amount).toLocaleString() : "—", "amount"],
+      ["低库存 SKU", biz.low_stock_skus ?? "—", "below safety stock"],
+      ["超时工单", biz.overdue_tickets ?? "—", "SLA breached"],
+      ["待审批", biz.pending_approvals ?? "—", "human in the loop"],
+      ["工具调用", ag.tool_calls ?? 0, `失败 ${ag.tool_failures ?? 0} · ${Math.round(ag.avg_latency_ms ?? 0)}ms`],
+      ["对话轮次", ag.conversations ?? 0, `拦截 ${ag.blocked_conversations ?? 0}`],
+      ["运行模式", d.mode || "offline", "agent"],
+    ].map(([l, v, h]) => `<div class="kpi"><div class="l">${esc(l)}</div><div class="v">${esc(v)}</div><div class="h">${esc(h)}</div></div>`).join("");
+
+    const by = biz.orders_by_status || {};
+    const max = Math.max(1, ...Object.values(by));
+    const tone = {"已发货": "var(--blue)", "已完成": "var(--teal)", "已退款": "var(--ink-3)",
+                  "待付款": "var(--amber)", "待发货": "#7a6a2f", "退款中": "var(--red)"};
+    $("#orderTotal").textContent = "total " + (biz.orders_total ?? 0);
+    $("#orderBars").innerHTML = Object.entries(by).map(([k, v]) =>
+      `<div class="bar"><span>${esc(k)}</span><span class="track"><span class="fill" style="width:${Math.max(2, Math.round(v / max * 100))}%;background:${tone[k] || "var(--teal)"}"></span></span><span class="n">${v}</span></div>`
+    ).join("") || '<div class="empty">无数据</div>';
+
+    const tools = Object.entries(ag.by_tool || {}).map(([tool, n]) => ({tool, n}));
+    $("#toolTotal").textContent = "calls " + (ag.tool_calls ?? 0);
+    $("#toolTable").querySelector("tbody").innerHTML = tools.map(t =>
+      `<tr><td class="mono">${esc(t.tool)}</td><td class="mono">${t.n ?? 0}</td></tr>`).join("")
+      || '<tr><td colspan="2" class="empty">还没有调用记录</td></tr>';
+  } catch (e){ toast("看板加载失败：" + e); }
+}
+
+/* ---------- audit ---------- */
+async function loadAudit(){
+  try {
+    const [calls, stats, convs] = await Promise.all([
+      api("/audit/recent?limit=40"), api("/audit/stats"), api("/audit/conversations?limit=15")]);
+    const items = calls.calls || calls.items || [];
+    $("#auditSub").textContent = `共 ${stats.tool_calls ?? 0} 次调用 · 失败 ${stats.tool_failures ?? 0}`;
+    $("#auditTable").querySelector("tbody").innerHTML = items.map(c =>
+      `<tr><td class="mono">${esc(c.ts)}</td><td class="mono">${esc(c.thread_id)}</td>
+        <td class="mono">${esc(c.tool)}</td><td>${esc(c.kind)}</td>
+        <td>${c.ok ? '<span class="chip ok">ok</span>' : '<span class="chip bad">fail</span>'}</td>
+        <td class="mono">${c.latency_ms ?? "—"}</td><td class="mono">${esc(String(c.args_json || JSON.stringify(c.args || {})).slice(0, 90))}</td></tr>`
+    ).join("") || '<tr><td colspan="7" class="empty">暂无调用</td></tr>';
+
+    const conv = convs.items || [];
+    $("#convTable").querySelector("tbody").innerHTML = conv.map(v =>
+      `<tr><td class="mono">${esc(v.ts)}</td><td>${esc((v.question || "").slice(0, 40))}</td>
+        <td>${esc((v.answer || "").slice(0, 70))}</td><td class="mono">${esc(v.confidence)}</td></tr>`
+    ).join("") || '<tr><td colspan="4" class="empty">暂无对话</td></tr>';
+  } catch (e){ toast("审计加载失败：" + e); }
+}
+
+/* ---------- approvals ---------- */
+async function loadApprovals(){
+  try {
+    const d = await api("/approvals");
+    const items = d.items || [];
+    const pend = items.filter(x => x.status === "pending");
+    const done = items.filter(x => x.status !== "pending");
+    $("#apprSub").textContent = `pending ${pend.length}`;
+    $("#apprPending").innerHTML = pend.map(a => `
+      <div class="approval">
+        <div class="top"><span class="mono">${esc(a.approval_no)} · ${esc(a.kind)}</span>
+          <span class="chip warn">pending</span></div>
+        <pre>${esc(a.payload_json || JSON.stringify(a.payload || {}, null, 1))}</pre>
+        <div class="row"><button class="btn" data-decide="approved" data-no="${esc(a.approval_no)}">通过</button>
+          <button class="btn ghost" data-decide="rejected" data-no="${esc(a.approval_no)}">驳回</button>
+          <span class="chip">${esc(a.requested_by || "agent")} 发起</span></div>
+      </div>`).join("") || '<div class="empty">没有待审批单据</div>';
+    $("#apprDone").innerHTML = done.map(a => `
+      <div class="approval"><div class="top"><span class="mono">${esc(a.approval_no)} · ${esc(a.kind)}</span>
+        <span class="chip ${a.status === "approved" ? "ok" : "bad"}">${esc(a.status)}</span></div>
+        <pre>${esc(a.payload_json || JSON.stringify(a.payload || {}, null, 1))}</pre>
+        <span class="chip">${esc(a.decided_by || "—")} · ${esc(a.decided_at || "")}</span></div>`).join("")
+      || '<div class="empty">暂无历史</div>';
+  } catch (e){ toast("审批加载失败：" + e); }
+}
+$("#apprPending").onclick = async e => {
+  const b = e.target.closest("button[data-decide]"); if (!b) return;
+  try {
+    await api(`/approvals/${encodeURIComponent(b.dataset.no)}/decide`, {method:"POST",
+      headers:{"Content-Type":"application/json"}, body: JSON.stringify({decision:b.dataset.decide, decided_by:"human"})});
+    toast("已" + (b.dataset.decide === "approved" ? "通过" : "驳回") + " " + b.dataset.no);
+    loadApprovals();
+  } catch (err){ toast("操作失败：" + err); }
+};
+
+/* ---------- tools ---------- */
+async function loadTools(){
+  try {
+    const d = await api("/tools");
+    $("#toolsSub").textContent = `${d.count} tools`;
+    $("#toolsTable").querySelector("tbody").innerHTML = (d.describe || []).map(t => {
+      const s = (d.schemas || []).find(x => (x.function || x).name === t.name) || {};
+      const fn = s.function || s;
+      const props = (fn.parameters || {}).properties || {};
+      const req = (fn.parameters || {}).required || [];
+      return `<tr><td class="mono">${esc(t.name)}</td><td>${esc(t.kind)}${t.requires_approval ? " · 需审批" : ""}</td>
+        <td>${esc(t.description)}</td>
+        <td class="mono">${Object.keys(props).map(k => esc(k) + (req.includes(k) ? "*" : "")).join(", ") || "—"}</td></tr>`;
+    }).join("");
+  } catch (e){ toast("工具加载失败：" + e); }
+}
+
+$("#refreshBoard").onclick = loadBoard;
+$("#refreshAudit").onclick = loadAudit;
+$("#refreshAppr").onclick = loadApprovals;
+loadBoard();
+</script>
+</body>
+</html>
